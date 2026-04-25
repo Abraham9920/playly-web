@@ -1,1 +1,1 @@
-{"scripts":{"dev":"next dev","build":"next build"},"dependencies":{"next":"14","react":"18","react-dom":"18"}}
+{"scripts":{"dev":"next dev","build":"next build"},"dependencies":{"next":"14","react":"18","react-dom":"18"},"devDependencies":{"@types/node":"^25.6.0","@types/react":"^19.2.14","@types/react-dom":"^19.2.3","typescript":"^6.0.3"}}
