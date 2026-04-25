@@ -1,7 +1,7 @@
 export default async function Home() {
   let games = [];
   try {
-    const res = await fetch('http://localhost:3000/games', { cache: 'no-store' });
+    const res = await fetch('https://playly-backend-production.up.railway.app/games', { cache: 'no-store' });
     games = await res.json();
   } catch(e) {}
   return (
