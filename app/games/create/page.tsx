@@ -227,7 +227,7 @@ export default function CreateGame() {
     setLoading(false);
   };
 
-  const canNext1 = form.title && form.sport && form.date && form.time;
+  const canNext1 = form.title && form.sport && form.time;
   const canSubmit = form.lat && form.lng;
 
   return (
