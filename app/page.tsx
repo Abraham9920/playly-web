@@ -1,488 +1,445 @@
-'use client';
-import { useEffect, useState } from 'react';
+"use client";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 
-const SPORTS = ['ALL', 'PADEL', 'SOCCER', 'YOGA', 'BASKETBALL', 'TENNIS'];
+const SPORTS = [
+  "All",
+  "Basketball",
+  "Soccer",
+  "Tennis",
+  "Volleyball",
+  "Running",
+  "Padel",
+];
+
+const DEMO_GAMES = [
+  {
+    id: 1,
+    sport: "Basketball",
+    title: "Pickup Basketball",
+    venue: "West 4th Street Courts",
+    address: "W 4th St, NYC",
+    time: "Today 6:00 PM",
+    players: 8,
+    maxPlayers: 10,
+    level: "Intermediate",
+    lat: 40.7308,
+    lng: -74.0002,
+  },
+  {
+    id: 2,
+    sport: "Soccer",
+    title: "Sunday Soccer",
+    venue: "Pier 40",
+    address: "Hudson River Park",
+    time: "Sun 10:00 AM",
+    players: 14,
+    maxPlayers: 22,
+    level: "Casual",
+    lat: 40.7282,
+    lng: -74.0094,
+  },
+  {
+    id: 3,
+    sport: "Tennis",
+    title: "Singles Match",
+    venue: "Central Park Tennis",
+    address: "Central Park West",
+    time: "Sat 9:00 AM",
+    players: 1,
+    maxPlayers: 2,
+    level: "Advanced",
+    lat: 40.7794,
+    lng: -73.9632,
+  },
+  {
+    id: 4,
+    sport: "Volleyball",
+    title: "Beach Volleyball",
+    venue: "East River Park",
+    address: "East River Esplanade",
+    time: "Today 7:00 PM",
+    players: 6,
+    maxPlayers: 12,
+    level: "Casual",
+    lat: 40.7135,
+    lng: -73.9776,
+  },
+  {
+    id: 5,
+    sport: "Running",
+    title: "Morning 5K",
+    venue: "Prospect Park",
+    address: "Brooklyn",
+    time: "Tomorrow 7:00 AM",
+    players: 4,
+    maxPlayers: 20,
+    level: "All Levels",
+    lat: 40.6602,
+    lng: -73.969,
+  },
+  {
+    id: 6,
+    sport: "Padel",
+    title: "Padel Doubles",
+    venue: "Padel Haus",
+    address: "524 W 19th St",
+    time: "Sat 2:00 PM",
+    players: 2,
+    maxPlayers: 4,
+    level: "Beginner",
+    lat: 40.7459,
+    lng: -74.0045,
+  },
+];
 
 const SPORT_ICONS: Record<string, string> = {
-  ALL: '⚡',
-  PADEL: '🎾',
-  SOCCER: '⚽',
-  YOGA: '🧘',
-  BASKETBALL: '🏀',
-  TENNIS: '🎾',
+  Basketball: "🏀",
+  Soccer: "⚽",
+  Tennis: "🎾",
+  Volleyball: "🏐",
+  Running: "🏃",
+  Padel: "🏓",
+  All: "🎯",
 };
 
-const SPORT_COLORS: Record<string, string> = {
-  PADEL: '#00E599',
-  SOCCER: '#FFD700',
-  YOGA: '#FF6B9D',
-  BASKETBALL: '#FF6B2B',
-  TENNIS: '#00D4FF',
-  ALL: '#00D4FF',
+const LEVEL_COLORS: Record<string, string> = {
+  Casual: "#00E599",
+  Intermediate: "#00D4FF",
+  Advanced: "#FF6B35",
+  Beginner: "#A78BFA",
+  "All Levels": "#F0F4F8",
 };
-
-interface Game {
-  id: string;
-  title: string;
-  sport: string;
-  skillLevel: string;
-  venue: string;
-  neighborhood: string;
-  startsAt: string;
-  duration: number;
-  maxPlayers: number;
-  joinedPlayers: number;
-  pricePerPlayer: number;
-  status: string;
-}
 
 export default function Home() {
-  const [games, setGames] = useState<Game[]>([]);
-  const [filtered, setFiltered] = useState<Game[]>([]);
-  const [activeSport, setActiveSport] = useState('ALL');
-  const [search, setSearch] = useState('');
-  const [loading, setLoading] = useState(true);
+  const router = useRouter();
+  const [sport, setSport] = useState("All");
+  const [games, setGames] = useState(DEMO_GAMES);
+  const [user, setUser] = useState<any>(null);
+  const [view, setView] = useState<"list" | "map">("list");
+  const [joining, setJoining] = useState<number | null>(null);
 
   useEffect(() => {
-    fetch('https://playly-backend-production.up.railway.app/games', { cache: 'no-store' })
-      .then(r => r.json())
-      .then(data => { setGames(data); setFiltered(data); setLoading(false); })
-      .catch(() => setLoading(false));
+    const u = localStorage.getItem("user");
+    if (u) setUser(JSON.parse(u));
+    fetchGames();
   }, []);
 
-  useEffect(() => {
-    let result = games;
-    if (activeSport !== 'ALL') result = result.filter(g => g.sport === activeSport);
-    if (search) result = result.filter(g =>
-      g.title.toLowerCase().includes(search.toLowerCase()) ||
-      g.venue.toLowerCase().includes(search.toLowerCase()) ||
-      g.neighborhood.toLowerCase().includes(search.toLowerCase())
-    );
-    setFiltered(result);
-  }, [activeSport, search, games]);
-
-  const formatTime = (iso: string) => {
-    const d = new Date(iso);
-    return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) +
-      ' · ' + d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+  const fetchGames = async () => {
+    try {
+      const res = await fetch(
+        "https://playly-backend-production.up.railway.app/games",
+      );
+      if (res.ok) {
+        const data = await res.json();
+        if (data.length > 0) setGames(data);
+      }
+    } catch {}
   };
 
-  const spotsLeft = (g: Game) => g.maxPlayers - g.joinedPlayers;
+  const filtered =
+    sport === "All" ? games : games.filter((g) => g.sport === sport);
+
+  const joinGame = async (gameId: number) => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      router.push("/login");
+      return;
+    }
+    setJoining(gameId);
+    try {
+      const res = await fetch(
+        `https://playly-backend-production.up.railway.app/games/${gameId}/join`,
+        {
+          method: "POST",
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      );
+      if (res.ok) fetchGames();
+    } catch {}
+    setJoining(null);
+  };
 
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;600&display=swap');
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { background: #060810; color: #F0F4F8; font-family: 'DM Sans', sans-serif; }
+        @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap');
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{background:#060810;font-family:'DM Sans',sans-serif;color:#F0F4F8;min-height:100vh}
+        
+        /* HEADER */
+        .header{position:sticky;top:0;z-index:100;background:rgba(6,8,16,0.85);backdrop-filter:blur(20px);border-bottom:1px solid #0E1318;padding:0 20px;display:flex;align-items:center;justify-content:space-between;height:60px}
+        .logo{font-family:'Bebas Neue',sans-serif;font-size:32px;background:linear-gradient(135deg,#00D4FF,#00E599);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;letter-spacing:1px}
+        .header-right{display:flex;align-items:center;gap:12px}
+        .btn-login{background:transparent;border:1px solid #1C2730;border-radius:8px;padding:8px 16px;color:#4A6070;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer}
+        .btn-create{background:linear-gradient(135deg,#00D4FF,#00E599);border:none;border-radius:8px;padding:8px 16px;color:#060810;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:700;cursor:pointer}
+        .avatar{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#00D4FF,#00E599);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#060810;cursor:pointer}
 
-        .hero {
-          position: relative;
-          padding: 60px 24px 40px;
-          overflow: hidden;
-        }
-        .hero::before {
-          content: '';
-          position: absolute;
-          top: -100px; left: -100px;
-          width: 500px; height: 500px;
-          background: radial-gradient(circle, rgba(0,212,255,0.12) 0%, transparent 70%);
-          pointer-events: none;
-        }
-        .hero::after {
-          content: '';
-          position: absolute;
-          top: -50px; right: -50px;
-          width: 400px; height: 400px;
-          background: radial-gradient(circle, rgba(0,229,153,0.08) 0%, transparent 70%);
-          pointer-events: none;
-        }
-        .logo {
-          font-family: 'Bebas Neue', sans-serif;
-          font-size: 72px;
-          line-height: 1;
-          letter-spacing: 2px;
-          background: linear-gradient(135deg, #00D4FF 0%, #00E599 100%);
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-          background-clip: text;
-        }
-        .tagline {
-          font-size: 13px;
-          font-weight: 500;
-          letter-spacing: 4px;
-          text-transform: uppercase;
-          color: #4A6070;
-          margin-top: 4px;
-        }
-        .search-wrap {
-          margin-top: 32px;
-          position: relative;
-        }
-        .search-icon {
-          position: absolute;
-          left: 16px; top: 50%;
-          transform: translateY(-50%);
-          font-size: 16px;
-          opacity: 0.4;
-        }
-        .search-input {
-          width: 100%;
-          background: #0E1318;
-          border: 1px solid #1C2730;
-          border-radius: 12px;
-          padding: 14px 16px 14px 44px;
-          color: #F0F4F8;
-          font-family: 'DM Sans', sans-serif;
-          font-size: 15px;
-          outline: none;
-          transition: border-color 0.2s;
-        }
-        .search-input::placeholder { color: #2A3A48; }
-        .search-input:focus { border-color: #00D4FF44; }
+        /* HERO */
+        .hero{padding:32px 20px 0;text-align:center}
+        .hero-title{font-family:'Bebas Neue',sans-serif;font-size:52px;line-height:1;background:linear-gradient(135deg,#F0F4F8 40%,#4A6070);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:8px}
+        .hero-sub{color:#4A6070;font-size:14px;letter-spacing:2px;text-transform:uppercase;margin-bottom:24px}
 
-        .filters {
-          padding: 0 24px;
-          display: flex;
-          gap: 8px;
-          overflow-x: auto;
-          scrollbar-width: none;
-          margin-bottom: 8px;
-        }
-        .filters::-webkit-scrollbar { display: none; }
-        .filter-btn {
-          flex-shrink: 0;
-          background: #0E1318;
-          border: 1px solid #1C2730;
-          border-radius: 100px;
-          padding: 8px 16px;
-          color: #4A6070;
-          font-family: 'DM Sans', sans-serif;
-          font-size: 13px;
-          font-weight: 500;
-          cursor: pointer;
-          transition: all 0.2s;
-          white-space: nowrap;
-        }
-        .filter-btn.active {
-          background: #0E1318;
-          border-color: var(--sport-color);
-          color: var(--sport-color);
-          box-shadow: 0 0 12px var(--sport-color-20);
-        }
+        /* VIEW TOGGLE */
+        .view-toggle{display:flex;gap:4px;background:#0E1318;border-radius:10px;padding:3px;width:fit-content;margin:0 auto 24px}
+        .vt-btn{padding:7px 20px;border:none;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;background:transparent;color:#4A6070;transition:all 0.2s}
+        .vt-btn.active{background:#1C2730;color:#F0F4F8}
 
-        .section-header {
-          padding: 16px 24px 12px;
-          display: flex;
-          align-items: baseline;
-          gap: 8px;
-        }
-        .section-title {
-          font-family: 'Bebas Neue', sans-serif;
-          font-size: 28px;
-          letter-spacing: 1px;
-          color: #F0F4F8;
-        }
-        .section-count {
-          font-size: 13px;
-          color: #2A3A48;
-          font-weight: 500;
-        }
+        /* SPORT FILTERS */
+        .filters{display:flex;gap:8px;overflow-x:auto;padding:0 20px 20px;scrollbar-width:none;-ms-overflow-style:none}
+        .filters::-webkit-scrollbar{display:none}
+        .filter-chip{display:flex;align-items:center;gap:6px;padding:8px 16px;border-radius:20px;border:1px solid #1C2730;background:#0E1318;color:#4A6070;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;transition:all 0.2s;flex-shrink:0}
+        .filter-chip.active{background:#1C2730;border-color:#00D4FF33;color:#F0F4F8}
 
-        .cards {
-          padding: 0 24px 80px;
-          display: flex;
-          flex-direction: column;
-          gap: 12px;
-        }
+        /* GAMES GRID */
+        .games-container{padding:0 20px 100px}
+        .section-label{font-size:12px;color:#2A3A48;letter-spacing:2px;text-transform:uppercase;margin-bottom:16px}
+        .games-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}
+        
+        /* GAME CARD */
+        .game-card{background:#0A0F18;border:1px solid #0E1318;border-radius:16px;padding:20px;cursor:pointer;transition:all 0.2s;position:relative;overflow:hidden}
+        .game-card:hover{border-color:#1C2730;transform:translateY(-2px)}
+        .game-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#00D4FF,#00E599);opacity:0;transition:opacity 0.2s}
+        .game-card:hover::before{opacity:1}
+        .card-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:14px}
+        .sport-badge{display:flex;align-items:center;gap:6px;background:#0E1318;border-radius:8px;padding:6px 10px}
+        .sport-icon{font-size:16px}
+        .sport-name{font-size:12px;font-weight:600;color:#4A6070;text-transform:uppercase;letter-spacing:1px}
+        .level-badge{font-size:11px;font-weight:600;padding:4px 8px;border-radius:6px;background:#0E1318}
+        .card-title{font-size:17px;font-weight:700;color:#F0F4F8;margin-bottom:4px;line-height:1.2}
+        .card-venue{font-size:13px;color:#2A3A48;margin-bottom:14px;display:flex;align-items:center;gap:4px}
+        .card-meta{display:flex;align-items:center;justify-content:space-between}
+        .card-time{font-size:13px;color:#4A6070;font-weight:500}
+        .players-bar{display:flex;align-items:center;gap:8px}
+        .players-text{font-size:12px;color:#4A6070}
+        .players-count{font-size:13px;font-weight:700;color:#00D4FF}
+        .btn-join{background:linear-gradient(135deg,#00D4FF,#00E599);border:none;border-radius:8px;padding:8px 18px;color:#060810;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:700;cursor:pointer;margin-top:14px;width:100%;transition:opacity 0.2s}
+        .btn-join:disabled{opacity:0.5}
+        .btn-join.full{background:#1C2730;color:#4A6070}
+        .progress-bar{width:100%;height:3px;background:#0E1318;border-radius:2px;margin-top:10px;overflow:hidden}
+        .progress-fill{height:100%;background:linear-gradient(90deg,#00D4FF,#00E599);border-radius:2px;transition:width 0.3s}
 
-        .card {
-          background: #0A0F14;
-          border: 1px solid #141E26;
-          border-radius: 16px;
-          padding: 20px;
-          cursor: pointer;
-          transition: all 0.2s;
-          position: relative;
-          overflow: hidden;
-        }
-        .card::before {
-          content: '';
-          position: absolute;
-          top: 0; left: 0; right: 0;
-          height: 2px;
-          background: linear-gradient(90deg, var(--sport-color) 0%, transparent 100%);
-          opacity: 0;
-          transition: opacity 0.2s;
-        }
-        .card:hover { border-color: #1C2730; transform: translateY(-1px); }
-        .card:hover::before { opacity: 1; }
+        /* MAP PLACEHOLDER */
+        .map-container{padding:0 20px 100px}
+        .map-box{background:#0A0F18;border:1px solid #0E1318;border-radius:16px;height:400px;display:flex;align-items:center;justify-content:center;margin-bottom:20px;position:relative;overflow:hidden}
+        .map-bg{position:absolute;inset:0;background:radial-gradient(ellipse at 30% 50%,#00D4FF08 0%,transparent 60%),radial-gradient(ellipse at 70% 30%,#00E59908 0%,transparent 50%)}
+        .map-label{color:#2A3A48;font-size:14px;text-align:center}
+        .map-pin{position:absolute;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;transform:translate(-50%,-50%);cursor:pointer;border:2px solid #060810;transition:transform 0.2s;box-shadow:0 0 12px rgba(0,212,255,0.3)}
+        .map-pin:hover{transform:translate(-50%,-50%) scale(1.2)}
 
-        .card-top {
-          display: flex;
-          justify-content: space-between;
-          align-items: flex-start;
-          margin-bottom: 12px;
-        }
-        .sport-badge {
-          display: flex;
-          align-items: center;
-          gap: 6px;
-          background: var(--sport-color-10);
-          border: 1px solid var(--sport-color-30);
-          border-radius: 100px;
-          padding: 4px 10px;
-          font-size: 11px;
-          font-weight: 600;
-          letter-spacing: 1px;
-          text-transform: uppercase;
-          color: var(--sport-color);
-        }
-        .price {
-          font-family: 'Bebas Neue', sans-serif;
-          font-size: 28px;
-          letter-spacing: 1px;
-          color: var(--sport-color);
-        }
-        .price-label {
-          font-size: 10px;
-          color: #2A3A48;
-          text-align: right;
-          margin-top: -2px;
-          letter-spacing: 0.5px;
-          text-transform: uppercase;
-        }
+        /* FAB */
+        .fab{position:fixed;bottom:24px;right:24px;width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#00D4FF,#00E599);border:none;font-size:24px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 24px rgba(0,212,255,0.4);z-index:50;transition:transform 0.2s}
+        .fab:hover{transform:scale(1.1)}
 
-        .card-title {
-          font-size: 18px;
-          font-weight: 600;
-          color: #F0F4F8;
-          margin-bottom: 4px;
-          line-height: 1.2;
-        }
-        .card-venue {
-          font-size: 13px;
-          color: #4A6070;
-          margin-bottom: 16px;
-        }
-        .card-venue span {
-          color: #2A8070;
-        }
-
-        .card-meta {
-          display: flex;
-          gap: 16px;
-          flex-wrap: wrap;
-        }
-        .meta-item {
-          display: flex;
-          align-items: center;
-          gap: 5px;
-          font-size: 12px;
-          color: #2A3A48;
-        }
-        .meta-icon { font-size: 13px; }
-
-        .card-footer {
-          margin-top: 16px;
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-        }
-        .spots-bar-wrap {
-          flex: 1;
-          margin-right: 16px;
-        }
-        .spots-label {
-          font-size: 11px;
-          color: #2A3A48;
-          margin-bottom: 5px;
-          letter-spacing: 0.5px;
-          text-transform: uppercase;
-        }
-        .spots-bar {
-          height: 3px;
-          background: #141E26;
-          border-radius: 2px;
-          overflow: hidden;
-        }
-        .spots-fill {
-          height: 100%;
-          background: var(--sport-color);
-          border-radius: 2px;
-          transition: width 0.6s ease;
-        }
-
-        .join-btn {
-          background: var(--sport-color);
-          color: #060810;
-          border: none;
-          border-radius: 10px;
-          padding: 10px 20px;
-          font-family: 'DM Sans', sans-serif;
-          font-size: 13px;
-          font-weight: 700;
-          cursor: pointer;
-          transition: all 0.2s;
-          white-space: nowrap;
-          letter-spacing: 0.5px;
-        }
-        .join-btn:hover { opacity: 0.85; transform: scale(0.98); }
-        .join-btn:disabled {
-          background: #1C2730;
-          color: #2A3A48;
-          cursor: not-allowed;
-        }
-
-        .empty {
-          text-align: center;
-          padding: 60px 24px;
-          color: #2A3A48;
-        }
-        .empty-icon { font-size: 48px; margin-bottom: 16px; }
-        .empty-text { font-size: 16px; }
-
-        .loading {
-          display: flex;
-          justify-content: center;
-          align-items: center;
-          height: 200px;
-          gap: 8px;
-        }
-        .dot {
-          width: 8px; height: 8px;
-          background: #00D4FF;
-          border-radius: 50%;
-          animation: bounce 1.2s infinite;
-        }
-        .dot:nth-child(2) { animation-delay: 0.2s; background: #00E599; }
-        .dot:nth-child(3) { animation-delay: 0.4s; }
-        @keyframes bounce {
-          0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
-          30% { transform: translateY(-10px); opacity: 1; }
-        }
-
-        .skill-dot {
-          display: inline-block;
-          width: 6px; height: 6px;
-          border-radius: 50%;
-          background: currentColor;
-          margin-right: 2px;
-          opacity: 0.6;
-        }
+        /* EMPTY */
+        .empty{text-align:center;padding:60px 20px;color:#2A3A48}
+        .empty-icon{font-size:48px;margin-bottom:12px}
+        .empty-text{font-size:15px}
       `}</style>
 
-      <div className="hero">
+      {/* HEADER */}
+      <header className="header">
         <div className="logo">Playly</div>
-        <div className="tagline">NYC Sports Platform</div>
-        <div className="search-wrap">
-          <span className="search-icon">🔍</span>
-          <input
-            className="search-input"
-            placeholder="Search games, venues, neighborhoods..."
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-          />
+        <div className="header-right">
+          {user ? (
+            <>
+              <button
+                className="btn-create"
+                onClick={() => router.push("/games/create")}
+              >
+                + Game
+              </button>
+              <div className="avatar" title={user.name}>
+                {user.name?.[0]?.toUpperCase() || "U"}
+              </div>
+            </>
+          ) : (
+            <>
+              <button
+                className="btn-login"
+                onClick={() => router.push("/login")}
+              >
+                Sign In
+              </button>
+              <button
+                className="btn-create"
+                onClick={() => router.push("/games/create")}
+              >
+                + Create Game
+              </button>
+            </>
+          )}
+        </div>
+      </header>
+
+      {/* HERO */}
+      <div className="hero">
+        <div className="hero-title">Find Your Game</div>
+        <div className="hero-sub">NYC Sports Community</div>
+        <div className="view-toggle">
+          <button
+            className={`vt-btn ${view === "list" ? "active" : ""}`}
+            onClick={() => setView("list")}
+          >
+            📋 List
+          </button>
+          <button
+            className={`vt-btn ${view === "map" ? "active" : ""}`}
+            onClick={() => setView("map")}
+          >
+            🗺️ Map
+          </button>
         </div>
       </div>
 
+      {/* SPORT FILTERS */}
       <div className="filters">
-        {SPORTS.map(sport => {
-          const color = SPORT_COLORS[sport] || '#00D4FF';
-          return (
-            <button
-              key={sport}
-              className={`filter-btn ${activeSport === sport ? 'active' : ''}`}
-              style={{
-                '--sport-color': color,
-                '--sport-color-20': color + '33',
-              } as React.CSSProperties}
-              onClick={() => setActiveSport(sport)}
-            >
-              {SPORT_ICONS[sport]} {sport === 'ALL' ? 'All Sports' : sport.charAt(0) + sport.slice(1).toLowerCase()}
-            </button>
-          );
-        })}
+        {SPORTS.map((s) => (
+          <button
+            key={s}
+            className={`filter-chip ${sport === s ? "active" : ""}`}
+            onClick={() => setSport(s)}
+          >
+            <span>{SPORT_ICONS[s]}</span>
+            <span>{s}</span>
+          </button>
+        ))}
       </div>
 
-      <div className="section-header">
-        <div className="section-title">Open Games</div>
-        <div className="section-count">{filtered.length} available</div>
-      </div>
-
-      {loading ? (
-        <div className="loading">
-          <div className="dot" /><div className="dot" /><div className="dot" />
-        </div>
-      ) : filtered.length === 0 ? (
-        <div className="empty">
-          <div className="empty-icon">🏟️</div>
-          <div className="empty-text">No games found</div>
+      {view === "list" ? (
+        <div className="games-container">
+          <div className="section-label">{filtered.length} games near you</div>
+          {filtered.length === 0 ? (
+            <div className="empty">
+              <div className="empty-icon">{SPORT_ICONS[sport] || "🎯"}</div>
+              <div className="empty-text">No {sport} games right now</div>
+            </div>
+          ) : (
+            <div className="games-grid">
+              {filtered.map((game) => {
+                const pct = Math.round((game.players / game.maxPlayers) * 100);
+                const full = game.players >= game.maxPlayers;
+                return (
+                  <div key={game.id} className="game-card">
+                    <div className="card-top">
+                      <div className="sport-badge">
+                        <span className="sport-icon">
+                          {SPORT_ICONS[game.sport] || "🎯"}
+                        </span>
+                        <span className="sport-name">{game.sport}</span>
+                      </div>
+                      <span
+                        className="level-badge"
+                        style={{ color: LEVEL_COLORS[game.level] || "#F0F4F8" }}
+                      >
+                        {game.level}
+                      </span>
+                    </div>
+                    <div className="card-title">{game.title}</div>
+                    <div className="card-venue">📍 {game.venue}</div>
+                    <div className="card-meta">
+                      <span className="card-time">🕐 {game.time}</span>
+                      <div className="players-bar">
+                        <span className="players-text">Players</span>
+                        <span className="players-count">
+                          {game.players}/{game.maxPlayers}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="progress-bar">
+                      <div
+                        className="progress-fill"
+                        style={{ width: `${pct}%` }}
+                      />
+                    </div>
+                    <button
+                      className={`btn-join ${full ? "full" : ""}`}
+                      onClick={() => joinGame(game.id)}
+                      disabled={full || joining === game.id}
+                    >
+                      {joining === game.id
+                        ? "Joining..."
+                        : full
+                          ? "Game Full"
+                          : "Join Game →"}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       ) : (
-        <div className="cards">
-          {filtered.map(g => {
-            const color = SPORT_COLORS[g.sport] || '#00D4FF';
-            const spots = spotsLeft(g);
-            const fillPct = (g.joinedPlayers / g.maxPlayers) * 100;
-            return (
+        <div className="map-container">
+          <div className="map-box">
+            <div className="map-bg" />
+            {filtered.map((game, i) => (
               <div
-                key={g.id}
-                className="card"
+                key={game.id}
+                className="map-pin"
+                title={game.title}
                 style={{
-                  '--sport-color': color,
-                  '--sport-color-10': color + '1A',
-                  '--sport-color-30': color + '4D',
-                } as React.CSSProperties}
+                  left: `${15 + (i % 4) * 22}%`,
+                  top: `${20 + Math.floor(i / 4) * 35}%`,
+                  background: `linear-gradient(135deg, #00D4FF, #00E599)`,
+                }}
               >
+                {SPORT_ICONS[game.sport] || "📍"}
+              </div>
+            ))}
+            <div className="map-label" style={{ marginTop: 220 }}>
+              🗺️ NYC Interactive Map
+              <br />
+              <span style={{ fontSize: 12 }}>
+                Add Google Maps API key in .env
+              </span>
+            </div>
+          </div>
+          <div className="games-grid">
+            {filtered.map((game) => (
+              <div key={game.id} className="game-card">
                 <div className="card-top">
                   <div className="sport-badge">
-                    {SPORT_ICONS[g.sport] || '🏃'} {g.sport}
+                    <span className="sport-icon">
+                      {SPORT_ICONS[game.sport] || "🎯"}
+                    </span>
+                    <span className="sport-name">{game.sport}</span>
                   </div>
-                  <div>
-                    <div className="price">${g.pricePerPlayer === 0 ? 'FREE' : g.pricePerPlayer}</div>
-                    <div className="price-label">per player</div>
-                  </div>
+                  <span
+                    className="level-badge"
+                    style={{ color: LEVEL_COLORS[game.level] || "#F0F4F8" }}
+                  >
+                    {game.level}
+                  </span>
                 </div>
-
-                <div className="card-title">{g.title}</div>
-                <div className="card-venue">
-                  {g.venue} · <span>{g.neighborhood}</span>
-                </div>
-
+                <div className="card-title">{game.title}</div>
+                <div className="card-venue">📍 {game.venue}</div>
                 <div className="card-meta">
-                  <div className="meta-item">
-                    <span className="meta-icon">📅</span>
-                    {formatTime(g.startsAt)}
-                  </div>
-                  <div className="meta-item">
-                    <span className="meta-icon">⏱</span>
-                    {g.duration} min
-                  </div>
-                  <div className="meta-item">
-                    <span className="meta-icon">📊</span>
-                    {g.skillLevel.charAt(0) + g.skillLevel.slice(1).toLowerCase()}
-                  </div>
+                  <span className="card-time">🕐 {game.time}</span>
+                  <span className="players-count">
+                    {game.players}/{game.maxPlayers}
+                  </span>
                 </div>
-
-                <div className="card-footer">
-                  <div className="spots-bar-wrap">
-                    <div className="spots-label">
-                      {spots > 0 ? `${spots} spot${spots !== 1 ? 's' : ''} left` : 'Full'}
-                    </div>
-                    <div className="spots-bar">
-                      <div className="spots-fill" style={{ width: `${fillPct}%` }} />
-                    </div>
-                  </div>
-                  <button className="join-btn" disabled={spots === 0}>
-                    {spots === 0 ? 'Full' : 'Join →'}
-                  </button>
-                </div>
+                <button
+                  className={`btn-join ${game.players >= game.maxPlayers ? "full" : ""}`}
+                  onClick={() => joinGame(game.id)}
+                >
+                  {game.players >= game.maxPlayers ? "Game Full" : "Join →"}
+                </button>
               </div>
-            );
-          })}
+            ))}
+          </div>
         </div>
       )}
+
+      {/* FAB */}
+      <button
+        className="fab"
+        onClick={() => router.push("/games/create")}
+        title="Create Game"
+      >
+        +
+      </button>
     </>
   );
 }
