@@ -407,7 +407,11 @@ export default function Home() {
               const pct = Math.round((game.players / game.maxPlayers) * 100);
               const full = game.players >= game.maxPlayers;
               return (
-                <div key={game.id} className="game-card">
+                <div
+                  key={game.id}
+                  className="game-card"
+                  onClick={() => router.push(`/games/${game.id}`)}
+                >
                   <div className="card-top">
                     <div className="sport-badge">
                       <span>{SPORT_ICONS[game.sport] || "🎯"}</span>
