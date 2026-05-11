@@ -103,19 +103,24 @@ const SPORT_ICONS: Record<string, string> = {
   All: "🎯",
 };
 
-const LEVEL_COLORS: Record<string, string> = {
-  Casual: "#00E599",
-  Intermediate: "#00D4FF",
-  Advanced: "#FF6B35",
-  Beginner: "#A78BFA",
-  "All Levels": "#F0F4F8",
-};
-
-declare global {
-  interface Window {
-    google: any;
-    initMap: () => void;
-  }
+const mapped = data.map((g: any) => ({
+            id: g.id,
+            sport: g.sport.charAt(0) + g.sport.slice(1).toLowerCase(),
+            title: g.title,
+            venue: typeof g.venue === "object" ? g.venue?.name || "NYC" : g.venue || "NYC",
+            address: typeof g.venue === "object" ? g.venue?.address || "New York" : "New York",
+            time: new Date(g.startsAt).toLocaleString("en-US", {
+              weekday: "short",
+              hour: "numeric",
+              minute: "2-digit",
+            }),
+            players: g.joinedPlayers || g.bookings?.length || 0,
+            maxPlayers: g.maxPlayers,
+            level: g.skillLevel === "ALL_LEVELS" ? "All Levels"
+                 : g.skillLevel.charAt(0) + g.skillLevel.slice(1).toLowerCase(),
+            lat: typeof g.venue === "object" ? g.venue?.lat || 40.758 : 40.758,
+            lng: typeof g.venue === "object" ? g.venue?.lng || -73.9855 : -73.9855,
+          }));
 }
 
 export default function Home() {
@@ -139,11 +144,30 @@ export default function Home() {
   const fetchGames = async () => {
     try {
       const res = await fetch(
-        "https://playly-backend-production.up.railway.app/games",
+        `${process.env.NEXT_PUBLIC_API_URL || "https://playly-backend-production.up.railway.app"}/games`,
       );
       if (res.ok) {
         const data = await res.json();
-        if (data.length > 0) setGames(data);
+        if (data.length > 0) {
+          const mapped = data.map((g: any) => ({
+            id: g.id,
+            sport: g.sport,
+            title: g.title,
+            venue: g.venue?.name || "NYC",
+            address: g.venue?.address || "New York",
+            time: new Date(g.startsAt).toLocaleString("en-US", {
+              weekday: "short",
+              hour: "numeric",
+              minute: "2-digit",
+            }),
+            players: g.bookings?.length || 0,
+            maxPlayers: g.maxPlayers,
+            level: g.skillLevel,
+            lat: g.venue?.lat || 40.758,
+            lng: g.venue?.lng || -73.9855,
+          }));
+          setGames(mapped);
+        }
       }
     } catch {}
   };
