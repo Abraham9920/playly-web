@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 
 const SPORTS = [
+  "All",
   "Basketball",
   "Soccer",
   "Tennis",
@@ -10,11 +11,21 @@ const SPORTS = [
   "Running",
   "Padel",
   "Yoga",
-  "Other",
+  "Football",
+  "Boxing",
+  "Hockey",
+  "Pickleball",
+  "Cycling",
 ];
 const LEVELS = ["Casual", "Beginner", "Intermediate", "Advanced", "All Levels"];
 const SPORT_ICONS: Record<string, string> = {
   Basketball: "🏀",
+  Yoga: "🧘",
+  Football: "🏈",
+  Boxing: "🥊",
+  Hockey: "🏒",
+  Pickleball: "🏓",
+  Cycling: "🚴",
   Soccer: "⚽",
   Tennis: "🎾",
   Volleyball: "🏐",
