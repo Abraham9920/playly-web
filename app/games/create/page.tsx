@@ -3,7 +3,6 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 
 const SPORTS = [
-  "All",
   "Basketball",
   "Soccer",
   "Tennis",
@@ -31,7 +30,6 @@ const SPORT_ICONS: Record<string, string> = {
   Volleyball: "🏐",
   Running: "🏃",
   Padel: "🏓",
-  Yoga: "🧘",
   Other: "🎯",
 };
 
